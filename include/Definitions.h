@@ -9,13 +9,13 @@
 #define BlockWidth3d 4
 #define BlockWidth2d 4
 #define BlockWidth1d 64
-#define Max_Cell_num (2*1000*1000*1000*1000)
+#define Max_Cell_num (2*1000*1000)
 #define Cell_Init_num 1
 #define Voxel_num 100 //x y z
 #define Voxel_length 25 // um
 #define Sort_Key_Last -1
 
-#define Max_Simulation_Time (200.f*24*60) //days (SIMULATION TIME - NOT WALL TIME)
+#define Max_Simulation_Time (200.f*24*60)
 #define Save_data_gap 36 // min
 
 #define O2_Default_Concentration 38.f  // mmHg
@@ -47,6 +47,6 @@
 #define Diffusion_dt 0.01f  //min
 
 //Stabalizing Tissue Growth EKC
-#define Target_Cell_Count 25600000
+#define Target_Cell_Count 1000
 #define Itts_Till_Stable 1000
 #define Max_Wall_Time (30.f * 60) //min

@@ -9,26 +9,16 @@
 struct Cell {
 	bool sign = false;
 	int mesh_idx = -1;
-	float3 pos = { -1.f,-1.f,-1.f };
-	float3 force = { 0.f,0.f,0.f };
-	float3 oldforce = { 0.f,0.f,0.f };
-	float r = -1.f;  // in um
-	// total volume
-	float V = -1.f;
-	// fluid volume
-	float Vf = -1.f;
-	// cytoplasmic volume
-	float Vcs = -1.f;
-	// nuclear solid volume
-	float Vns = -1.f;
+	float3 pos = { -1.f,-1.f,0.f}; //kept in the third parameter for paraview EKC
+	float2 force = { 0.f,0.f};
+	float2 oldforce = { 0.f,0.f};
+	float r = -1.f;		//radius in um
+	float V = -1.f; 	// total volume
+	float Vf = -1.f;	// fluid volume
+	float Vcs = -1.f; 	// cytoplasmic volume
+	float Vns = -1.f; 	// nuclear solid volume
 
-////0 for mature (quiescent)
-////1 divide reparation (premitotic)
-////2 for growing (postmitotic)
-////3 for apoptotic
-////4 for early necrotic
-////5 for late necrotic
-
+////[0 = quiescent] [1 = premitotic] [2 = postmitotic] [3=apoptotic] [4 = early necrotic] [5 = late necrotic]
 	int phase = -1;
 	float cell_clock = 0.f;
 
@@ -46,15 +36,16 @@ struct Cell {
 	//}
 };
 
-void Cell::show() 
-	{printf("Cell Idx:%d, Cell pos: %f,%f,%f, Cell force:%f,%f,%f, Cell R:%f, Phase:%d\n", sign, pos.x, pos.y, pos.z, force.x, force.y, force.z,r, phase);}
+void Cell::show() {
+	printf("Cell Idx:%d, Cell pos: %f,%f,%f, Cell force:%f,%f, Cell R:%f, Phase:%d\n", sign, pos.x, pos.y, pos.z, force.x, force.y, r, phase);
+}
 
 void Cell::reset() {
 	sign = false;
 	mesh_idx = -1;
-	pos = { -1.f,-1.f,-1.f };
-	force = { 0.f,0.f,0.f };
-	oldforce = { 0.f,0.f,0.f };
+	pos = { -1.f,-1.f,0.f};
+	force = { 0.f,0.f};
+	oldforce = { 0.f,0.f};
 
 	r = -1.f;
 	phase = -1;
@@ -65,8 +56,9 @@ void Cell::reset() {
 	cell_clock = 0.f;
 }
 
-void Cell::Radius_update() 
-	{r = pow(0.23873241 * V, 1.0 / 3);}
+void Cell::Radius_update() {
+	r = sqrt(V / M_PI);
+}
 
 // return rate /min
 float Cell::O2_consume(float O2) {
@@ -82,25 +74,20 @@ float Cell::O2_consume(float O2) {
 	return rate;
 }
 
-float Cell::O2_consume() 
-	{return Cell::O2_consume(1.f);}
+float Cell::O2_consume() {
+	return Cell::O2_consume(1.f);
+}
 
 void Cell::Volume_update() {
-	float ff = 0.7502;
-	float rf = 3.f / 60.f;  
-	float rcs = 0.33f / 60.f;
-	float rns = 0.33f / 60.f;
-	float Vns_0 = 135.f; // um3
-	float Vf_0 = 1871.f;  // 1871 
-	float Vcs_0 = 488.f; // standard cytoplasmic:nuclear volume ratio
+	float ff = 0.7502; 			//Desired Fluid Volume Ratio
+	float rf = 3.f / 60.f;  	//Every 20 min fluid update 
+	float rcs = 0.33f / 60.f; 	//19.8 min cytoplasm update
+	float rns = 0.33f / 60.f;	//19.8 min nucleus update
+	float Vns_0 = 135.f; 		// Desiired Nuclear Volume
+	float Vf_0 = 1871.f;  		// 1871 - Desired Fluid Volume
+	float Vcs_0 = 488.f; 		// Desired Cytoplasmic Volume
 
-	////0 for mature (quiescent)
-	////1 divide reparation (premitotic)
-	////2 for growing (postmitotic)
-	////3 for apoptotic
-	////4 for early necrotic
-	////5 for late necrotic
-
+	////[0 = quiescent] [1 = premitotic] [2 = postmitotic] [3=apoptotic] [4 = early necrotic] [5 = late necrotic]
 	if (phase == 0 || phase == 2) {
 		// default
 	}
@@ -135,7 +122,7 @@ void Cell::Volume_update() {
 	Vns = Vns * (1.f - Biology_dt * rns) + rns * Biology_dt * Vns_0;
 	Vcs = Vcs * (1.f - Biology_dt * rcs) + rcs * Biology_dt * Vcs_0;
 	V = Vf + Vns + Vcs;
-	r = pow(0.23873241 * V, 1.0 / 3);
+	r = sqrt(V/M_PI);
 	return;
 }
 
@@ -143,7 +130,6 @@ bool Cell::Phase_update_ki67adv(float rand, float O2, int currentnum) {
 
 	cell_clock = cell_clock + Biology_dt;
 	bool proliferate = false;
-
 
 	//Cell Death and Birth Calculations EKC
 	float proliferation_rate, apoptosis_rate, necrosis_rate;
@@ -155,27 +141,10 @@ bool Cell::Phase_update_ki67adv(float rand, float O2, int currentnum) {
 	
 	float apoptosis_prob = apoptosis_rate * Biology_dt;//0.00319f / 60; // 1.f / 8.6 / 50 / 60; // 2% of cells are in apoptotic phase
 	float proliferation_prob = 1.f * proliferation_rate * Biology_dt;  
-	
-
-	/* if (O2 > Tumor_O2_Proliferation_Sat) {
-		proliferation_prob = proliferation_rate * Biology_dt;
-	}
-	else if (O2 < Tumor_O2_Proliferation_Thres) {
-		proliferation_prob = 0;
-	} */
-	/* float necrosis_prob = 1.f * (Tumor_Necrosis_02_Thres - O2) / (Tumor_Necrosis_02_Thres - Tumor_Necrosis_02_Max) * necrosis_rate * Biology_dt;
-	if (O2 > Tumor_Necrosis_02_Thres) {
-		necrosis_prob = 0;
-	}
-	else if (O2 < Tumor_Necrosis_02_Max) {
-		necrosis_prob = necrosis_rate * Biology_dt;
-	} */
 	float necrosis_prob = 0;
-	
 
 	// float Vcs_stand = 488.f;
-	// [0 = Quiescent] [1 = Premitotic] [2 = Postmitotic] [3 = Apoptotic] [4 = Early Necrotic] [5 = Late Necrotic]
-
+	////[0 = quiescent] [1 = premitotic] [2 = postmitotic] [3=apoptotic] [4 = early necrotic] [5 = late necrotic]
 	if (phase >= 3) {
 		// dead cell
 		if (phase == 4 && V >= Default_V * 2) {

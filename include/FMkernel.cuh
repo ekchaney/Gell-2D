@@ -67,7 +67,7 @@ __global__ void forcekernel(Cell* cell, int num, int* s, int* e) {
 	int3 posidx = Find_Mesh(pos1, Voxel_length);
 
 	float distance = 0.f;
-	float fx = 0, fy = 0, fz = 0;
+	float fx = 0, fy = 0;
 	float R = 0.f;
 	float thres = Tumor_CC_Max_Dist;
 	float coefr = 0.f;
@@ -86,8 +86,7 @@ __global__ void forcekernel(Cell* cell, int num, int* s, int* e) {
 					if (cell[cell2idx].sign == false) continue;
 
 					pos2 = cell[cell2idx].pos;
-					distance = sqrtf((pos1.x - pos2.x) * (pos1.x - pos2.x) +
-						(pos1.y - pos2.y) * (pos1.y - pos2.y) + (pos1.z - pos2.z) * (pos1.z - pos2.z) + 0.0001);
+					distance = sqrtf((pos1.x - pos2.x) * (pos1.x - pos2.x) + (pos1.y - pos2.y) * (pos1.y - pos2.y) + (pos1.z - pos2.z) * (pos1.z - pos2.z) + 0.0001);
 					if (distance >= thres ) continue;
 
 					///////////////////////////////////////////////////
@@ -106,7 +105,6 @@ __global__ void forcekernel(Cell* cell, int num, int* s, int* e) {
 					coefa = (distance <= thres) ? Ccca * ((1 - distance / thres) * (1 - distance / thres) / distance) : 0.f;
 					fx += (pos1.x - pos2.x) * (coefr - coefa);
 					fy += (pos1.y - pos2.y) * (coefr - coefa);
-					fz += (pos1.z - pos2.z) * (coefr - coefa);
 
 					///////////////////////////////////////////////////
 				}
@@ -114,7 +112,7 @@ __global__ void forcekernel(Cell* cell, int num, int* s, int* e) {
 		}
 
 	}
-	cell[i].force = { fx,fy,fz };
+	cell[i].force = { fx,fy};
 }
 
 // check the total cell number
@@ -136,13 +134,13 @@ __global__ void movementkernel(Cell* cell, int num) {
 	}
 	float dt = Mechanics_dt;
 	float3 pos = cell[i].pos;
-	float3 of = cell[i].oldforce;
-	float3 f = cell[i].force;
+	float2 of = cell[i].oldforce;
+	float2 f = cell[i].force;
 	pos.x += dt / 2.f * (3.f * f.x - of.x);
 	pos.y += dt / 2.f * (3.f * f.y - of.y);
-	pos.z += dt / 2.f * (3.f * f.z - of.z);
+	pos.z += 0.f;
 
-	//printf("Cell %d, F(%f£¬%f£¬%f),OF(%f£¬%f£¬%f),Move(%f£¬%f£¬%f)\n", i, f.x, f.y, f.z, of.x, of.y, of.z, move.x, move.y, move.z);
+	//printf("Cell %d, F(%fï¿½ï¿½%fï¿½ï¿½%f),OF(%fï¿½ï¿½%fï¿½ï¿½%f),Move(%fï¿½ï¿½%fï¿½ï¿½%f)\n", i, f.x, f.y, f.z, of.x, of.y, of.z, move.x, move.y, move.z);
 	//remove the outside cells
 	int3 ijk = Find_Mesh(pos,Voxel_length);
 	if (!Check_Inside(ijk)) {
@@ -153,7 +151,7 @@ __global__ void movementkernel(Cell* cell, int num) {
 	cell[i].pos.y = pos.y;
 	cell[i].pos.z = pos.z;
 	cell[i].oldforce = f;
-	cell[i].force = { 0.f,0.f,0.f };
+	cell[i].force = { 0.f,0.f};
 	cell[i].mesh_idx = Find_Index(ijk);
 }
 

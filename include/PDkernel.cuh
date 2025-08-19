@@ -1,5 +1,3 @@
-//Kernel for proliferation and death
-
 #pragma once
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h" 
@@ -15,14 +13,16 @@
 #include "Definitions.h"
 #include "Cells.cuh"
 
-//Returns boolean status on wheather a cell is dead
-struct isDeadCell 
+// kernel for proliferation and death
+
+struct isDeadCell
 {
 	__host__ __device__
-	bool operator()(const Cell x)
-		{return (x.sign == false);}
+		bool operator()(const Cell x)
+	{
+		return (x.sign == false);
+	}
 };
-
 
 __global__ void Birthkernel(float* p, Cell* cell, curandState* curand_states, int currentnum, int* gcurrentnum) {
 	const int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -38,10 +38,15 @@ __global__ void Birthkernel(float* p, Cell* cell, curandState* curand_states, in
 	meshi = Find_Index(cellp.x, cellp.y, cellp.z, Voxel_num);
 	float O2 = p[meshi];
 
-	// Update cell phase: 	[0 = Quiescent] [1 = Premitotic] [2 = Postmitotic] [3 = Apoptotic] [4 = Early Necrotic] [5 = Late Necrotic]
+	// update cell phase
 	cell[i].Volume_update();
-	bool proli = cell[i].Phase_update_ki67adv(randvalue, O2, currentnum);   // modified to agree with physicell 0 - EKC
-
+	bool proli = cell[i].Phase_update_ki67adv(randvalue, O2, currentnum);   // modified to agree with physicell
+	////0 for mature (quiescent)
+	////1 divide reparation (premitotic)
+	////2 for growing (postmitotic)
+	////3 for apoptotic
+	////4 for early necrotic
+	////5 for late necrotic
 
 	if (proli && (*gcurrentnum < Max_Cell_num-1)) {
 		int idx = atomicAdd(gcurrentnum, 1);
@@ -53,8 +58,8 @@ __global__ void Birthkernel(float* p, Cell* cell, curandState* curand_states, in
 			float rm = cell[i].r;
 			float distance = 0.2063f * rm;
 			rm *= 0.7937f;
-			float3 posd = { posm.x + dir.x * distance,posm.y + dir.y * distance, posm.z + dir.z * distance };
-			posm = { posm.x - dir.x * distance,posm.y - dir.y * distance, posm.z - dir.z * distance };
+			float3 posd = { posm.x + dir.x * distance,posm.y + dir.y * distance, posm.z + 0 * distance };
+			posm = { posm.x - dir.x * distance,posm.y - dir.y * distance, posm.z - 0 * distance };
 
 			cell[i].r = rm;
 			cell[i].pos = posm;
@@ -80,7 +85,6 @@ __global__ void Birthkernel(float* p, Cell* cell, curandState* curand_states, in
 		}
 	}
 }
-
 int CellBirth_kernel(float* p, thrust::device_vector<Cell>& GpuCell, curandState* curand_states, int currentnum, int* gcurrentnum) {
 	int newnum = 0;
 	auto GC = thrust::raw_pointer_cast(GpuCell.data());
@@ -108,7 +112,6 @@ int CellDeath_kernel(thrust::device_vector<Cell>& GpuCell, curandState* curand_s
 		std::cerr << "Death Module Error: " << e.what() << std::endl;
 		exit(-1);
 	}
-
 	cudaMemcpy(gcurrentnum, &currentnum, sizeof(int), cudaMemcpyHostToDevice);
 	return currentnum;
 }

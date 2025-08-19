@@ -21,6 +21,7 @@
 //	}
 //	fclose(outfile);
 //}
+
 void savecsv_cell(thrust::host_vector<Cell>& C, int currentnum, const std::string f) {
 	const char* filename = f.c_str();
 	FILE* outfile = fopen(filename, "w");

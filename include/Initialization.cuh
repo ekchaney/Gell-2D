@@ -18,17 +18,16 @@ void Cell_sphere_Initialization(thrust::host_vector<Cell>& C, int N) {
 	float radius = Tumor_Cell_Radius;
 	float ballr = radius * pow(N, 1.0 / 3) / 1.612 * 1.87;
 	printf("Volume center is %f, Cell Init Ball radius is %f", middle, ballr);
-	float x, y, z;
+	float x, y;
 	for (int i = 0; i < N;) {
 		x = 2.f * ((float)rand()) / RAND_MAX - 1.f;
 		y = 2.f * ((float)rand()) / RAND_MAX - 1.f;
-		z = 2.f * ((float)rand()) / RAND_MAX - 1.f;
 		//printf("%f %f %f ", x, y, z);
-		if (x * x + y * y + z * z < 1) {
+		if (x * x + y * y < 1) {
 			C[i].sign = true;
-			C[i].pos = { middle + x * ballr,middle + y * ballr,middle + z * ballr };
-			C[i].force = { 0.f,0.f,0.f };
-			C[i].oldforce = { 0.f,0.f,0.f };
+			C[i].pos = { middle + x * ballr,middle + y * ballr,0.f};
+			C[i].force = { 0.f,0.f};
+			C[i].oldforce = { 0.f,0.f};
 			C[i].r = radius;
 			C[i].phase = 0; // quiescent
 			C[i].V = Default_V;
