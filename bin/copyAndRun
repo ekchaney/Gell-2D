@@ -1,0 +1,32 @@
+#!/bin/bash
+
+PROGNAME="ABM.Echaney"
+
+if [ -z "$1" ]
+then
+	echo "Error: No folder specified."
+else
+
+	if [ -d $SCRATCH/runs/$PROGNAME/$1 ] 
+	then
+		read -p "Simulation name exists. Replace? " -n 1 -r 
+                echo 
+		if [[ $REPLY =~ ^[Yy]$ ]]
+		then
+			echo "Replacing simulation."
+                	rm $SCRATCH/runs/$PROGNAME/$1/*
+		else
+			echo "No job created."
+			exit
+		fi
+        else
+                echo "Creating new simulation."
+                mkdir -p $SCRATCH/runs/$PROGNAME/$1
+        fi
+	
+	cp -a gpuScript $SCRATCH/runs/$PROGNAME/$1/
+	cp -a HDS $SCRATCH/runs/$PROGNAME/$1/
+
+	cd $SCRATCH/runs/$PROGNAME/$1
+	sbatch -J $1 gpuScript $1
+fi

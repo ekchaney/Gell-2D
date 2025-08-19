@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#SBATCH -o gpuScript.o%j 	  	      # Output and error file name (%j expands to jobID)
+#SBATCH --account=pi_lobo  	          # Queue (partition) name -- normal, development, etc.cpu2021
+#SBATCH --gres=gpu:1
+#SBATCH --exclude=                      # Exclude node 108
+#SBATCH --time=00-01:00:00   		        # Run time (dd-hh:mm:ss) 
+#SBATCH --mail-user=echaney2@umbc.edu  	# address for email notification
+#SBATCH --mail-type=ALL			            # email at Begin and End of job
+#SBATCH --mem=20G
+
+set -x # Echo commands
+date
+mkdir data
+./HDS
+date
+
